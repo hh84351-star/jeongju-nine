@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let gardenCrew = [
     {
       name: "이도현",
+      nickname: "도현새싹 🌱",
       age: 23,
       affiliation: "한국대학교 사회학과",
       history: "감사 챌린지 2회",
@@ -180,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: "박하은",
+      nickname: "하은꽃 🌸",
       age: 21,
       affiliation: "서울예술대학교 시각디자인과",
       history: "온기 편지 배달 3회",
@@ -187,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: "최준식",
+      nickname: "준식나무 🌳",
       age: 27,
       affiliation: "스타트업 개발자",
       history: "감사 챌린지 1회",
@@ -194,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: "양유리",
+      nickname: "유리잎 🍃",
       age: 22,
       affiliation: "동국대학교 프랑스문학과",
       history: "온기 편지 배달 1회",
@@ -217,22 +221,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // Array to hold floater physics states
   let floaters = [];
 
-  // Affiliation masking helper (e.g. 서울대학교 -> 서울대**)
+  // Real Name masking helper (e.g. 이도현 -> 이*현, 정주민 -> 정*민)
+  const maskName = (name) => {
+    if (!name) return '';
+    const trimmed = name.trim();
+    if (trimmed.length <= 2) {
+      return trimmed[0] + '*';
+    }
+    return trimmed[0] + '*'.repeat(trimmed.length - 2) + trimmed[trimmed.length - 1];
+  };
+
+  // Affiliation masking helper (e.g. 서울대학교 -> 서울***)
   const maskAffiliation = (str) => {
     if (!str) return '';
     const trimmed = str.trim();
     if (trimmed.length <= 2) {
       return trimmed[0] + '*';
     }
-    return trimmed.slice(0, -2) + '**';
+    const prefix = trimmed.slice(0, 2);
+    const maskedLength = trimmed.length - 2;
+    return prefix + '*'.repeat(maskedLength);
   };
 
   const createFloaterDOM = (member) => {
     const floater = document.createElement('div');
     floater.className = 'garden-floater';
     
-    // Display nickname instead of real name for privacy
-    const displayName = member.nickname || member.name;
+    // Display nickname or fall back to masked real name for absolute privacy
+    const displayName = member.nickname || maskName(member.name);
     const svgContent = generateDoodleSVG(displayName, 48);
     floater.innerHTML = `
       <div class="garden-floater-avatar">${svgContent}</div>
@@ -252,9 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const openMemberModal = (member) => {
-    const displayName = member.nickname || member.name;
+    const displayName = member.nickname || maskName(member.name);
     modalDoodleAvatar.innerHTML = generateDoodleSVG(displayName, 80);
-    modalMName.textContent = displayName; // Only show nickname on site details modal
+    modalMName.textContent = displayName; // Only show nickname/masked name on site details modal
     modalMAge.textContent = `9세 (실제 ${member.age}세)`;
     modalMAffiliation.textContent = maskAffiliation(member.affiliation); // Mask organization names
     modalMHistory.textContent = member.history;
