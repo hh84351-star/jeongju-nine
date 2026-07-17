@@ -1231,4 +1231,40 @@ footer {
   .insta-stat {
     font-size: 0.8rem;
   }
+  /* Calendar Mobile Optimization */
+  .calendar-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+  .calendar-grid {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .calendar-day-cell {
+    padding: 2px !important;
+    font-size: 0.72rem !important;
+  }
+  .calendar-date {
+    font-size: 0.72rem !important;
+  }
+  .calendar-day-header {
+    padding: 6px 0 !important;
+    font-size: 0.7rem !important;
+  }
+  .calendar-header {
+    padding: 10px 14px !important;
+  }
+  .calendar-title {
+    font-size: 1rem !important;
+  }
+  .calendar-nav-btn {
+    padding: 2px 6px !important;
+    font-size: 0.9rem !important;
+  }
+  .calendar-tooltip {
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 16px !important;
+  }
 }

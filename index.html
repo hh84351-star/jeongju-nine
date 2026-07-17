@@ -7,6 +7,8 @@
   <meta name="description" content="순수한 마음으로 세상에 따뜻한 정(情)을 나누는 봉사 단체 '정주는 아홉살'입니다.">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="assets/캐릭터1.png">
+  <!-- Supabase Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -414,11 +416,15 @@
       <div class="diary-header">🌸 정원 신청서 (1일 크루 지원)</div>
       
       <form class="apply-form" id="application-form">
-        <!-- Name / Age Row -->
+        <!-- Name / Nickname / Age Row -->
+        <div class="form-group">
+          <label class="form-label" for="apply-name">실명 (이메일 전송용/대외비) 📛</label>
+          <input class="form-input" type="text" id="apply-name" placeholder="실명을 입력해 주세요 (정원 미노출)" required max="10">
+        </div>
         <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 12px;">
           <div class="form-group">
-            <label class="form-label" for="apply-name">이름 (정원명) 📛</label>
-            <input class="form-input" type="text" id="apply-name" placeholder="이름" required max="10">
+            <label class="form-label" for="apply-nickname">정원 닉네임 (사이트 표시용) 🏷️</label>
+            <input class="form-input" type="text" id="apply-nickname" placeholder="정원에 표시될 닉네임" required max="15">
           </div>
           <div class="form-group">
             <label class="form-label" for="apply-age">나이 🎈</label>

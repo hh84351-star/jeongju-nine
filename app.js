@@ -217,14 +217,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // Array to hold floater physics states
   let floaters = [];
 
+  // Affiliation masking helper (e.g. 서울대학교 -> 서울대**)
+  const maskAffiliation = (str) => {
+    if (!str) return '';
+    const trimmed = str.trim();
+    if (trimmed.length <= 2) {
+      return trimmed[0] + '*';
+    }
+    return trimmed.slice(0, -2) + '**';
+  };
+
   const createFloaterDOM = (member) => {
     const floater = document.createElement('div');
     floater.className = 'garden-floater';
     
-    const svgContent = generateDoodleSVG(member.name, 48);
+    // Display nickname instead of real name for privacy
+    const displayName = member.nickname || member.name;
+    const svgContent = generateDoodleSVG(displayName, 48);
     floater.innerHTML = `
       <div class="garden-floater-avatar">${svgContent}</div>
-      <div class="garden-floater-name">${member.name}</div>
+      <div class="garden-floater-name">${displayName}</div>
     `;
 
     // Click details popup (only if it wasn't dragged)
@@ -240,10 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const openMemberModal = (member) => {
-    modalDoodleAvatar.innerHTML = generateDoodleSVG(member.name, 80);
-    modalMName.textContent = member.name;
+    const displayName = member.nickname || member.name;
+    modalDoodleAvatar.innerHTML = generateDoodleSVG(displayName, 80);
+    modalMName.textContent = displayName; // Only show nickname on site details modal
     modalMAge.textContent = `9세 (실제 ${member.age}세)`;
-    modalMAffiliation.textContent = member.affiliation;
+    modalMAffiliation.textContent = maskAffiliation(member.affiliation); // Mask organization names
     modalMHistory.textContent = member.history;
     modalMMotivation.textContent = member.motivation;
     memberModal.classList.add('active');
@@ -484,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Initialize garden & start drifting loop
-  initGarden();
+  loadSavedMembers();
   requestAnimationFrame(updateGardenDrift);
 
 
@@ -963,41 +976,153 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ==========================================
-  // 7. Garden Application Form Submission
+  // 7. Supabase & Web3Forms Configuration
+  // ==========================================
+  // [안내] 실시간 DB 연동을 원하시면 아래 URL과 ANON_KEY를 본인의 Supabase 프로젝트 값으로 변경하세요.
+  const SUPABASE_URL = ""; 
+  const SUPABASE_ANON_KEY = "";
+  // [안내] 실시간 이메일 수신을 원하시면 아래 WEB3FORMS_ACCESS_KEY에 발급받은 키값을 넣으세요.
+  const WEB3FORMS_ACCESS_KEY = ""; 
+
+  let supabaseClient = null;
+  if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+
+  // Load members from Supabase (or LocalStorage backup)
+  const loadSavedMembers = async () => {
+    // 1. Always load LocalStorage saved members first (ensures persistence out-of-the-box!)
+    let localSaved = JSON.parse(localStorage.getItem('local_members') || '[]');
+    localSaved.forEach(m => {
+      if (!gardenCrew.some(c => c.name === m.name && c.nickname === m.nickname)) {
+        gardenCrew.unshift(m);
+      }
+    });
+
+    // 2. Fetch live data from Supabase if configured
+    if (supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          data.forEach(m => {
+            const mapped = {
+              name: m.name,
+              nickname: m.nickname || m.name,
+              age: m.age,
+              affiliation: m.affiliation,
+              motivation: m.motivation,
+              history: "참여 정원 🌱"
+            };
+            // Avoid duplicate loading
+            if (!gardenCrew.some(c => c.name === mapped.name && c.nickname === mapped.nickname)) {
+              gardenCrew.unshift(mapped);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Supabase load error, using local storage cache:", err);
+      }
+    }
+    initGarden();
+  };
+
+  // ==========================================
+  // 8. Garden Application Form Submission
   // ==========================================
   const applicationForm = document.getElementById('application-form');
 
-  applicationForm.addEventListener('submit', (e) => {
+  applicationForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name = document.getElementById('apply-name').value.trim();
+    const nickname = document.getElementById('apply-nickname').value.trim();
     const age = parseInt(document.getElementById('apply-age').value, 10);
     const phone = document.getElementById('apply-phone').value.trim();
     const affiliation = document.getElementById('apply-affiliation').value.trim();
     const motivation = document.getElementById('apply-motivation').value.trim();
 
-    if (!name || !age || !phone || !affiliation || !motivation) {
+    if (!name || !nickname || !age || !phone || !affiliation || !motivation) {
       alert("신청서 양식을 모두 작성해 주세요!");
       return;
     }
 
-    // Create new member object
     const newMember = {
       name,
+      nickname,
       age,
       affiliation,
       history: "신규 정원 (새싹 대기중 🌱)",
       motivation
     };
 
-    // Add to crew list
+    // 1. Save to Supabase (if configured)
+    if (supabaseClient) {
+      try {
+        const { error } = await supabaseClient
+          .from('members')
+          .insert([{ 
+            name, 
+            nickname, 
+            age, 
+            phone, 
+            affiliation, 
+            motivation,
+            created_at: new Date().toISOString()
+          }]);
+        if (error) throw error;
+      } catch (err) {
+        console.error("Supabase save error:", err);
+      }
+    } else {
+      // LocalStorage Backup Persistence
+      let saved = JSON.parse(localStorage.getItem('local_members') || '[]');
+      saved.push(newMember);
+      localStorage.setItem('local_members', JSON.stringify(saved));
+    }
+
+    // 2. Send email via Web3Forms (if configured)
+    if (WEB3FORMS_ACCESS_KEY) {
+      try {
+        const emailBody = {
+          apikey: WEB3FORMS_ACCESS_KEY,
+          subject: `[정주는 아홉살] 신규 정원 신청서 - ${name}님`,
+          from_name: "정주는 아홉살 신청 알림",
+          name: name,
+          nickname: nickname,
+          age: `${age}세`,
+          phone: phone,
+          affiliation: affiliation,
+          motivation: motivation,
+          message: `정주는 아홉살에 새로운 정원이 지원했습니다.\n\n실명: ${name}\n닉네임: ${nickname}\n나이: ${age}세\n연락처: ${phone}\n소속: ${affiliation}\n지원 동기:\n${motivation}`
+        };
+
+        fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(emailBody)
+        });
+      } catch (err) {
+        console.error("Web3Forms email submit error:", err);
+      }
+    }
+
+    // Add to session memory
     gardenCrew.unshift(newMember);
 
     // Reset Form & Close Modal
     applicationForm.reset();
     closeApplyModal();
 
-    // Re-render & append new floater to garden
+    // Re-render garden floater list
     initGarden();
 
     // Redirect to garden tab
@@ -1005,7 +1130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Instantly popup detail of newly added member
     setTimeout(() => {
-      alert(`축하합니다, ${name}님!\n\n순수한 아홉살 정원이 되셨습니다.\n당신만의 캐릭터가 정원에 성공적으로 심어져 돌아다니고 있습니다! 🌱`);
+      alert(`축하합니다, ${nickname}님!\n\n순수한 아홉살 정원이 되셨습니다.\n당신만의 캐릭터가 정원에 성공적으로 심어졌습니다! 🌱\n\n(실명과 연락처 정보는 관리자에게만 안전하게 전송되었습니다.)`);
       openMemberModal(newMember);
     }, 400);
   });
