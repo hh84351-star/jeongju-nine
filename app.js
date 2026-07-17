@@ -1111,6 +1111,17 @@ document.addEventListener('DOMContentLoaded', () => {
       motivation
     };
 
+    // Always save to LocalStorage backup first to guarantee persistence on this device
+    try {
+      let saved = JSON.parse(localStorage.getItem('local_members') || '[]');
+      if (!saved.some(m => m.name === name && m.nickname === nickname)) {
+        saved.push(newMember);
+        localStorage.setItem('local_members', JSON.stringify(saved));
+      }
+    } catch (lsErr) {
+      console.error("LocalStorage save error:", lsErr);
+    }
+
     // 1. Save to Supabase (if configured)
     if (supabaseClient) {
       try {
@@ -1129,11 +1140,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error("Supabase save error:", err);
       }
-    } else {
-      // LocalStorage Backup Persistence
-      let saved = JSON.parse(localStorage.getItem('local_members') || '[]');
-      saved.push(newMember);
-      localStorage.setItem('local_members', JSON.stringify(saved));
     }
 
     // 2. Send email via Web3Forms (if configured)
