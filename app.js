@@ -979,8 +979,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 7. Supabase & Web3Forms Configuration
   // ==========================================
   // [안내] 실시간 DB 연동을 원하시면 아래 URL과 ANON_KEY를 본인의 Supabase 프로젝트 값으로 변경하세요.
-  const SUPABASE_URL = ""; 
-  const SUPABASE_ANON_KEY = "";
+  const SUPABASE_URL = "https://voujvyqawfs.supabase.co"; 
+  const SUPABASE_ANON_KEY = "sb_publishable_o9yFp-HbVgqxpT7icw2xPA_yf0WGboI";
   // [안내] 실시간 이메일 수신을 원하시면 아래 WEB3FORMS_ACCESS_KEY에 발급받은 키값을 넣으세요.
   const WEB3FORMS_ACCESS_KEY = "4c05105e-2235-48a8-8b28-25c39573a90c"; 
 
