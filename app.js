@@ -496,9 +496,12 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(updateGardenDrift);
   };
 
-  // Initialize garden & start drifting loop
-  loadSavedMembers();
+  // Initialize garden with default/cached members instantly
+  initGarden();
   requestAnimationFrame(updateGardenDrift);
+
+  // Load saved members from database / localStorage asynchronously
+  loadSavedMembers();
 
 
   // ==========================================
@@ -991,11 +994,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load members from Supabase (or LocalStorage backup)
   async function loadSavedMembers() {
+    let hasUpdates = false;
+
     // 1. Always load LocalStorage saved members first (ensures persistence out-of-the-box!)
     let localSaved = JSON.parse(localStorage.getItem('local_members') || '[]');
     localSaved.forEach(m => {
       if (!gardenCrew.some(c => c.name === m.name && c.nickname === m.nickname)) {
         gardenCrew.unshift(m);
+        hasUpdates = true;
       }
     });
 
@@ -1022,6 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Avoid duplicate loading
             if (!gardenCrew.some(c => c.name === mapped.name && c.nickname === mapped.nickname)) {
               gardenCrew.unshift(mapped);
+              hasUpdates = true;
             }
           });
         }
@@ -1029,7 +1036,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Supabase load error, using local storage cache:", err);
       }
     }
-    initGarden();
+
+    // Only re-render if new members were found
+    if (hasUpdates) {
+      initGarden();
+    }
   };
 
   // ==========================================
