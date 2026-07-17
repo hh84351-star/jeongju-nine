@@ -990,7 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Load members from Supabase (or LocalStorage backup)
-  const loadSavedMembers = async () => {
+  async function loadSavedMembers() {
     // 1. Always load LocalStorage saved members first (ensures persistence out-of-the-box!)
     let localSaved = JSON.parse(localStorage.getItem('local_members') || '[]');
     localSaved.forEach(m => {
