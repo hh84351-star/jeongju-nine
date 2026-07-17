@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const words = str.trim().split(/\s+/);
     
     const maskedWords = words.map(word => {
-      const suffixes = ["대학교", "학부", "대학", "학과", "과"];
+      const suffixes = ["대학교", "학부", "대학", "학과", "과", "대"];
       
       for (const suffix of suffixes) {
         if (word.endsWith(suffix)) {
