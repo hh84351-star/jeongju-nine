@@ -2,7 +2,23 @@
  * 정주는 아홉살 - Interactive Core Script (v4)
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+// Diagnostic error overlay
+window.addEventListener('error', function(e) {
+  const errorBox = document.createElement('div');
+  errorBox.id = 'js-diagnostic-error-box';
+  errorBox.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#fee2e2;color:#991b1b;border:2px solid #f87171;padding:15px;z-index:999999;font-family:monospace;font-size:12px;border-radius:8px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);';
+  errorBox.innerHTML = `<strong>[JS Error]</strong> ${e.message}<br><small>at ${e.filename}:${e.lineno}:${e.colno}</small>`;
+  document.body.appendChild(errorBox);
+});
+window.addEventListener('unhandledrejection', function(e) {
+  const errorBox = document.createElement('div');
+  errorBox.id = 'js-diagnostic-rejection-box';
+  errorBox.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#fee2e2;color:#991b1b;border:2px solid #f87171;padding:15px;z-index:999999;font-family:monospace;font-size:12px;border-radius:8px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);';
+  errorBox.innerHTML = `<strong>[Unhandled Promise Rejection]</strong> ${e.reason}`;
+  document.body.appendChild(errorBox);
+});
+
+const startApp = () => {
 
   // ==========================================
   // 1. Tab Routing Simulator (4 Tabs)
@@ -535,12 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(updateGardenDrift);
   };
 
-  // Initialize garden with default/cached members instantly
-  initGarden();
-  requestAnimationFrame(updateGardenDrift);
-
-  // Load saved members from database / localStorage asynchronously
-  loadSavedMembers();
+  // (Initialization moved to the end of the file to prevent TDZ errors)
 
 
   // ==========================================
@@ -611,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const cell = document.createElement('div');
       cell.className = 'calendar-day-cell';
       
-      const dateKey = `${year}-${month}-${day}`;
+      const dateKey = `${year}-${month + 1}-${day}`;
       const hasEvent = calendarEvents[dateKey];
 
       if (hasEvent) {
@@ -660,8 +671,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('apply-motivation').value = `[${selectedEventTitle}] 일정을 확인하고 함께 정을 나누기 위해 정원으로 지원하게 되었습니다!`;
     openApplyModal();
   });
-
-  renderCalendar();
 
 
   // ==========================================
@@ -1208,4 +1217,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 400);
   });
 
-});
+  // ==========================================
+  // 9. Page Initialization
+  // ==========================================
+  initGarden();
+  requestAnimationFrame(updateGardenDrift);
+  renderCalendar();
+  loadSavedMembers();
+
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}
