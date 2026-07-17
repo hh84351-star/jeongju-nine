@@ -405,8 +405,10 @@ document.addEventListener('DOMContentLoaded', () => {
         member: member,
         x: x,
         y: y,
-        width: 72,
-        height: 80
+        state: 'idle', // 'idle' or 'moving'
+        timer: Math.random() * 2000 + 1000, // randomized staggered timing offset
+        vx: 0,
+        vy: 0
       });
 
       // Apply initial coordinate translate
@@ -417,8 +419,73 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // Initialize garden
+  // Slowly drift members: alternates between 3s idle and 4s drifting
+  let lastDriftTime = performance.now();
+  const updateGardenDrift = (time) => {
+    const deltaTime = time - lastDriftTime;
+    lastDriftTime = time;
+
+    const fieldWidth = gardenField.clientWidth || 800;
+    const fieldHeight = gardenField.clientHeight || 460;
+
+    floaters.forEach(f => {
+      // If user is currently dragging this element, freeze its drifting state
+      if (f.element.dataset.dragging === "true") {
+        f.state = 'idle';
+        f.timer = 3000; // reset to 3s idle
+        f.vx = 0;
+        f.vy = 0;
+        return;
+      }
+
+      f.timer -= deltaTime;
+
+      if (f.timer <= 0) {
+        if (f.state === 'idle') {
+          // Switch to moving (duration: exactly 4 seconds)
+          f.state = 'moving';
+          f.timer = 4000;
+          
+          // Random drift direction (speed: ~15 to ~30 px/sec)
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 0.015 + Math.random() * 0.015; 
+          f.vx = Math.cos(angle) * speed;
+          f.vy = Math.sin(angle) * speed;
+        } else {
+          // Switch to idle (duration: exactly 3 seconds)
+          f.state = 'idle';
+          f.timer = 3000;
+          f.vx = 0;
+          f.vy = 0;
+        }
+      }
+
+      // Apply drift movement if in moving state
+      if (f.state === 'moving') {
+        f.x += f.vx * deltaTime;
+        f.y += f.vy * deltaTime;
+
+        // Boundaries checks & bounce rebound
+        const maxX = fieldWidth - 72;
+        const maxY = fieldHeight - 80;
+
+        if (f.x < 0) { f.x = 0; f.vx = -f.vx; }
+        else if (f.x > maxX) { f.x = maxX; f.vx = -f.vx; }
+
+        if (f.y < 0) { f.y = 0; f.vy = -f.vy; }
+        else if (f.y > maxY) { f.y = maxY; f.vy = -f.vy; }
+
+        // Translate element
+        f.element.style.transform = `translate3d(${f.x}px, ${f.y}px, 0)`;
+      }
+    });
+
+    requestAnimationFrame(updateGardenDrift);
+  };
+
+  // Initialize garden & start drifting loop
   initGarden();
+  requestAnimationFrame(updateGardenDrift);
 
 
   // ==========================================
