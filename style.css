@@ -180,12 +180,9 @@ header .container {
 }
 
 .logo-img {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-light);
-  object-fit: cover;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
 }
 
 .header-cta {
@@ -1068,8 +1065,9 @@ footer {
     font-size: 0.95rem;
   }
   .logo-img {
-    width: 24px;
-    height: 24px;
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
   }
   .nav-menu {
     gap: 4px;

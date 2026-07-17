@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // If user is currently dragging this element, freeze its drifting state
       if (f.element.dataset.dragging === "true") {
         f.state = 'idle';
-        f.timer = 3000; // reset to 3s idle
+        f.timer = 1500; // reset to 1.5s idle
         f.vx = 0;
         f.vy = 0;
         return;
@@ -452,9 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
           f.vx = Math.cos(angle) * speed;
           f.vy = Math.sin(angle) * speed;
         } else {
-          // Switch to idle (duration: exactly 3 seconds)
+          // Switch to idle (duration: exactly 1.5 seconds)
           f.state = 'idle';
-          f.timer = 3000;
+          f.timer = 1500;
           f.vx = 0;
           f.vy = 0;
         }
