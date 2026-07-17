@@ -982,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const SUPABASE_URL = ""; 
   const SUPABASE_ANON_KEY = "";
   // [안내] 실시간 이메일 수신을 원하시면 아래 WEB3FORMS_ACCESS_KEY에 발급받은 키값을 넣으세요.
-  const WEB3FORMS_ACCESS_KEY = ""; 
+  const WEB3FORMS_ACCESS_KEY = "4c05105e-2235-48a8-8b28-25c39573a90c"; 
 
   let supabaseClient = null;
   if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
