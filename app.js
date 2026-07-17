@@ -231,16 +231,39 @@ document.addEventListener('DOMContentLoaded', () => {
     return trimmed[0] + '*'.repeat(trimmed.length - 2) + trimmed[trimmed.length - 1];
   };
 
-  // Affiliation masking helper (e.g. 서울대학교 -> 서울***)
+  // Affiliation masking helper (e.g. 숭실대학교 -> 숭*대학교, 국어국문학과 -> 국어**학과)
   const maskAffiliation = (str) => {
     if (!str) return '';
-    const trimmed = str.trim();
-    if (trimmed.length <= 2) {
-      return trimmed[0] + '*';
-    }
-    const prefix = trimmed.slice(0, 2);
-    const maskedLength = trimmed.length - 2;
-    return prefix + '*'.repeat(maskedLength);
+    const words = str.trim().split(/\s+/);
+    
+    const maskedWords = words.map(word => {
+      const suffixes = ["대학교", "학부", "대학", "학과", "과"];
+      
+      for (const suffix of suffixes) {
+        if (word.endsWith(suffix)) {
+          const mainPart = word.slice(0, -suffix.length);
+          if (mainPart.length === 0) return word;
+          
+          if (mainPart.length <= 2) {
+            // "숭실대학교" -> "숭*대학교", "사회학과" -> "사*학과"
+            return mainPart[0] + '*' + suffix;
+          } else {
+            // "국어국문학과" -> "국어**학과", "시각디자인과" -> "시각***과"
+            const prefix = mainPart.slice(0, 2);
+            const maskedLength = mainPart.length - 2;
+            return prefix + '*'.repeat(maskedLength) + suffix;
+          }
+        }
+      }
+      
+      // Fallback for words without suffixes (e.g. "개발자")
+      if (word.length <= 2) {
+        return word[0] + '*';
+      }
+      return word.slice(0, 2) + '*'.repeat(word.length - 2);
+    });
+    
+    return maskedWords.join(' ');
   };
 
   const createFloaterDOM = (member) => {
