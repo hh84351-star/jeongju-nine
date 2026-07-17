@@ -709,12 +709,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dynamically update question image based on Q1-Q6 files in assets folder
     const quizImages = [
-      "assets/Q1엘리베이터.jpg",
-      "assets/Q2시루떡.jpg",
-      "assets/Q3식당.jpg",
-      "assets/Q4불편.jpg",
-      "assets/Q5해외.jpg",
-      "assets/Q6칭찬.jpg"
+      "assets/Q1.jpg",
+      "assets/Q2.jpg",
+      "assets/Q3.jpg",
+      "assets/Q4.jpg",
+      "assets/Q5.jpg",
+      "assets/Q6.jpg"
     ];
     if (quizQImageEl) {
       quizQImageEl.src = quizImages[quizProgress.currentIndex];
