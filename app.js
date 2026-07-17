@@ -227,8 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="garden-floater-name">${member.name}</div>
     `;
 
-    // Click details popup
+    // Click details popup (only if it wasn't dragged)
     floater.addEventListener('click', () => {
+      if (floater.dataset.dragged === "true") {
+        floater.dataset.dragged = "false"; // reset
+        return;
+      }
       openMemberModal(member);
     });
 
@@ -437,6 +441,10 @@ document.addEventListener('DOMContentLoaded', () => {
     "2026-7-12": {
       title: "🧹 온기 우편 배달 - 환경 미화원 편",
       desc: "이른 새벽 골목을 청소해 주시는 미화원분들의 쉼터로 시원한 꿀배 음료와 크루원들의 감사 편지 보드를 비치하는 현장 프로젝트일입니다. (시간: 오전 5시)"
+    },
+    "2026-7-15": {
+      title: "⭐ 따뜻한 칭찬 챌린지 - 로컬 보드 개설",
+      desc: "이웃 간의 정과 격려 문화를 위해 주민들이 자주 지나는 자리에 익명 칭찬 엽서 보드와 우편함을 개설하고 따뜻함을 나눕니다. (시간: 오후 1시)"
     },
     "2026-7-22": {
       title: "📦 감사 챌린지 - 택배기사님 힐링데이",
@@ -655,33 +663,197 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let title = '선택적 정(情) 조절 장치';
     let emoji = '🐟';
-    let desc = '';
+    let typeOndol = 0;
+    let typeControl = 0;
+    let typeShield = 0;
+    let htmlDesc = '';
 
     if (percentage <= 40) {
       title = '드라이아이스급 철벽 방어막';
       emoji = '⛄';
-      desc = `당신은 차가운 현대 사회에서 생존하기 위해 고도로 최적화된 시티 보이/시티 걸입니다! 엘리베이터 발소리에도 문을 닫는 번개 같은 순발력의 소유자일 수도 있겠군요. 하지만 마음속 깊은 곳엔 9살 적 잃어버린 수줍은 꼬마 아이가 들어있습니다. 친구들이 당신과 정을 나누기 위해 방한복을 입고 접근하고 있을지도 모릅니다. 먼저 가벼운 인사나 작은 선플 하나로 당신의 해동 작업을 시작해 보는 건 어떨까요?`;
+      
+      // Calculate relative percentages for other types
+      typeShield = percentage;
+      typeControl = Math.round((100 - percentage) * 0.7);
+      typeOndol = 100 - typeShield - typeControl;
+
+      htmlDesc = `
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">🧊 성향 한줄 요약</div>
+          <div class="quiz-desc-body">개인주의 현대 사회에 완벽하게 최적화된 철벽 냉동 인간!</div>
+        </div>
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">🧊 주요 특징</div>
+          <div class="quiz-desc-body">엘리베이터 문이 닫히려는 소리가 나면 번개 같은 반사 신경으로 닫힘 버튼을 누르거나 바쁜 척 핸드폰만 뚫어지게 응시하곤 합니다. 이웃이 먼저 떡을 전하러 와도 속으로 적잖이 부담스러워하며 문 앞에 놓아달라는 시크함을 지니고 있을 확률이 높습니다.</div>
+        </div>
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">🧊 온기 처방전</div>
+          <div class="quiz-desc-body">당신에게도 순수한 아홉 살 시절, 아무 대가 없이 이웃을 도우며 기뻐하던 동심이 숨어있을 것입니다. 온라인 선플 달기나 가벼운 미소 인사를 건네며 꽁꽁 얼어붙은 마음을 슬며시 녹여보는 건 어떨까요?</div>
+        </div>
+      `;
     } else if (percentage <= 75) {
       title = '선택적 정(情) 조절 장치';
       emoji = '🐟';
-      desc = `당신은 필요한 만큼 온기를 키고 끌 줄 아는 현명한 '사회적 지성인'입니다. 아는 척해야 할지 모르는 척해야 할지 머릿속으로 시뮬레이션(MBTI의 I가 강력하게 의심되는군요!)을 0.5초 만에 돌려 가장 안전한 중간을 택하는 편입니다. 마주친 대학 동기에게 가볍게 눈인사만 나누고 도망치듯 자리를 피한 적이 있진 않나요? 조금만 마음을 연다면 주변 사람들에게 스파 온천 같은 개운한 정을 선물해 줄 수 있는 잠재력 높은 온기 소유자입니다.`;
+      
+      typeControl = percentage;
+      typeShield = Math.round((100 - percentage) * 0.5);
+      typeOndol = 100 - typeShield - typeControl;
+
+      htmlDesc = `
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">💧 성향 한줄 요약</div>
+          <div class="quiz-desc-body">눈치와 이성으로 대인 관계 온도를 알맞게 조절하는 스마트 미온수!</div>
+        </div>
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">💧 주요 특징</div>
+          <div class="quiz-desc-body">필요한 만큼 온기를 키고 끌 줄 아는 뛰어난 사회성을 가졌습니다. 아는 척을 해야 할지, 모르는 척 넘어갈지 0.5초 만에 머릿속으로 시뮬레이션(MBTI의 'I'가 강력하게 의심되는군요!)을 돌려 가장 안전한 중간 스탠스를 택합니다. 식당에서 마주친 친구에게 살짝 목인사만 하고 도망치는 효율적 다정함의 소유자입니다.</div>
+        </div>
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">💧 온기 처방전</div>
+          <div class="quiz-desc-body">조금만 더 마음을 열어 주변에 온기를 보탠다면, 당신도 모르는 사이에 주변 사람들에게 스파 온천 같은 기분 좋은 포근함을 선물할 수 있는 훌륭한 온기 유망주입니다!</div>
+        </div>
+      `;
     } else {
       title = '정이 넘쳐 흐르는 아궁이 온돌';
       emoji = '🍠';
-      desc = `오 마이 갓! 당신은 정을 주기 위해 태어난 오지랖의 신, 동네 마당발이시군요! 식당 이모님께 친근하게 굴거나 닫히는 엘리베이터를 문이 깨질 정도로 붙잡아주는 사람의 전형입니다. 이웃집에서 시루떡을 들고 오면 접시를 깨끗하게 비우고 답례로 귤 한 박스를 넘겨줄 상입니다. 대가 없는 정과 사랑으로 주변을 너무 뜨겁게 데워, 주변 사람들이 더위(?)를 느낄 수도 있으니 가끔은 조절해 주시는 센스가 필요합니다. 당신은 정주는 아홉살의 훌륭한 정원 후보생입니다!`;
+      
+      typeOndol = percentage;
+      typeControl = Math.round((100 - percentage) * 0.8);
+      typeShield = 100 - typeOndol - typeControl;
+
+      htmlDesc = `
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">🔥 성향 한줄 요약</div>
+          <div class="quiz-desc-body">주변 모든 이들을 후끈하게 데워주는 걸어다니는 인간 난로!</div>
+        </div>
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">🔥 주요 특징</div>
+          <div class="quiz-desc-body">남 일에 관심이 많고, 대가 없이 먼저 정을 베풀어주는 따뜻한 오지랖의 화신입니다! 식당 이모님께 먼저 안부를 건네거나 닫히는 엘리베이터를 몸으로라도 잡아주는 따뜻함이 가득합니다. 이웃이 시루떡을 가져오면 빈 접시를 보낼 수 없어 집에 있는 귤 한 박스를 안겨 돌려보내야 직성이 풀리는 아궁이 같은 심성을 지녔습니다.</div>
+        </div>
+        <div class="quiz-result-desc-block">
+          <div class="quiz-desc-title">🔥 온기 처방전</div>
+          <div class="quiz-desc-body">대가를 바라지 않는 사랑으로 주변 온도를 너무 올려 주변 사람들을 다소 덥게(?) 만들 수도 있으니 가끔은 속도 조절이 필요합니다! 바로 '정원'이 되어 우리 사회에 사랑의 싹을 심어보세요.</div>
+        </div>
+      `;
     }
 
     quizResultScore.textContent = `${percentage}%`;
     quizResultTitle.textContent = title;
     quizResultEmoji.textContent = emoji;
-    quizResultDesc.textContent = desc;
+    
+    // Inject structured visual descriptions
+    quizResultDesc.innerHTML = htmlDesc;
 
-    // Text color styling
-    if (percentage <= 45) quizResultScore.style.color = 'var(--text-color)';
-    else if (percentage <= 78) quizResultScore.style.color = 'var(--secondary-color)';
+    // Apply color to main score text
+    if (percentage <= 40) quizResultScore.style.color = 'var(--text-color)';
+    else if (percentage <= 75) quizResultScore.style.color = 'var(--secondary-color)';
     else quizResultScore.style.color = 'var(--primary-color)';
 
+    // Update and animate breakdown chart bars
+    document.getElementById('val-ondol').textContent = `${typeOndol}%`;
+    document.getElementById('val-control').textContent = `${typeControl}%`;
+    document.getElementById('val-shield').textContent = `${typeShield}%`;
+
+    // Trigger transitions via timeout
+    setTimeout(() => {
+      document.getElementById('bar-ondol').style.width = `${typeOndol}%`;
+      document.getElementById('bar-control').style.width = `${typeControl}%`;
+      document.getElementById('bar-shield').style.width = `${typeShield}%`;
+    }, 100);
+
+    // Setup save image button listener
+    const saveImgBtn = document.getElementById('btn-result-save-img');
+    
+    // Clean old listeners to avoid multiple binding
+    const newSaveImgBtn = saveImgBtn.cloneNode(true);
+    saveImgBtn.parentNode.replaceChild(newSaveImgBtn, saveImgBtn);
+    
+    newSaveImgBtn.addEventListener('click', () => {
+      const textDescForImage = (percentage <= 40) 
+        ? "개인주의 현대 사회에 완벽하게 최적화된 철벽 냉동 인간! 엘리베이터 문이 닫히려는 소리가 나면 번개 같은 반사 신경으로 닫힘 버튼을 누르거나 바쁜 척 핸드폰만 뚫어지게 응시하곤 합니다." 
+        : (percentage <= 75)
+          ? "눈치와 이성으로 대인 관계 온도를 알맞게 조절하는 스마트 미온수! 필요한 만큼 온기를 키고 끌 줄 아는 뛰어난 사회성을 가졌습니다. 눈인사만 하고 도망치는 효율적 다정함의 소유자입니다."
+          : "주변 모든 이들을 후끈하게 데워주는 걸어다니는 인간 난로! 남 일에 관심이 많고, 대가 없이 먼저 정을 베풀어주는 따뜻한 오지랖의 화신입니다. 이웃이 떡을 주면 귤 박스를 안겨 돌려보냅니다.";
+
+      saveResultAsImage(percentage, title, emoji, textDescForImage);
+    });
+
     quizResultScreen.classList.add('active');
+  };
+
+  // Canvas image generator helper
+  const saveResultAsImage = (percentage, title, emoji, desc) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 700;
+    const ctx = canvas.getContext('2d');
+
+    // Fill background (white card with border)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 600, 700);
+
+    ctx.strokeStyle = '#19191B';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(15, 15, 570, 670);
+
+    // Draw header banner
+    ctx.fillStyle = '#FF4D4D';
+    ctx.fillRect(15, 15, 570, 90);
+    
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 26px Pretendard';
+    ctx.textAlign = 'center';
+    ctx.fillText('정주는 아홉살 - 나의 정도(情度) 테스트 결과', 300, 70);
+
+    // Draw score percentage
+    ctx.fillStyle = '#19191B';
+    ctx.font = '800 80px Outfit';
+    ctx.fillText(`${percentage}%`, 300, 220);
+
+    // Draw card header title
+    ctx.fillStyle = '#19191B';
+    ctx.font = 'bold 34px Pretendard';
+    ctx.fillText(title, 300, 290);
+
+    // Draw emoji
+    ctx.font = '100px Pretendard';
+    ctx.fillText(emoji, 300, 420);
+
+    // Draw description wrapping text
+    ctx.fillStyle = '#444444';
+    ctx.font = 'bold 16px Pretendard';
+    
+    // Word wrap paragraph helper
+    const words = desc.split(' ');
+    let line = '';
+    let y = 490;
+    const maxWidth = 480;
+    const lineHeight = 30;
+
+    for (let n = 0; n < words.length; n++) {
+      let testLine = line + words[n] + ' ';
+      let metrics = ctx.measureText(testLine);
+      let testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, 300, y);
+        line = words[n] + ' ';
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, 300, y);
+
+    // Draw footer Vercel link
+    ctx.fillStyle = '#888888';
+    ctx.font = 'bold 13px Outfit';
+    ctx.fillText('https://jeongju-nine.vercel.app', 300, 655);
+
+    // Trigger download
+    const link = document.createElement('a');
+    link.download = `정주는아홉살_정도테스트_결과.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   const resetQuiz = () => {
