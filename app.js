@@ -258,26 +258,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Draggable logic for garden members (without auto-floating physics)
+  // Draggable logic for garden members (with smart drag-vs-click detection)
   const makeDraggable = (element, member) => {
     let isDragging = false;
     let startX = 0;
     let startY = 0;
-    let currentX = 0;
-    let currentY = 0;
-
-    // Find initial coordinates
-    const idx = floaters.findIndex(f => f.member === member);
-    if (idx !== -1) {
-      currentX = floaters[idx].x;
-      currentY = floaters[idx].y;
-    }
 
     const onMouseDown = (e) => {
       isDragging = true;
-      startX = e.clientX - currentX;
-      startY = e.clientY - currentY;
+      
+      // Read the latest real position from the global state (prevents jumping/shifting)
+      const fIdx = floaters.findIndex(f => f.member === member);
+      const posX = fIdx !== -1 ? floaters[fIdx].x : 0;
+      const posY = fIdx !== -1 ? floaters[fIdx].y : 0;
+
+      startX = e.clientX - posX;
+      startY = e.clientY - posY;
+
+      element.dataset.dragging = "true";
+      element.dataset.dragged = "false";
       element.style.zIndex = 1000;
+      
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
     };
@@ -296,11 +297,12 @@ document.addEventListener('DOMContentLoaded', () => {
       x = Math.max(minX, Math.min(x, maxX));
       y = Math.max(minY, Math.min(y, maxY));
 
-      currentX = x;
-      currentY = y;
-
       const fIdx = floaters.findIndex(f => f.member === member);
       if (fIdx !== -1) {
+        // If moved more than 4px, set dragged flag to prevent detail modal on mouse release
+        if (Math.abs(x - floaters[fIdx].x) > 4 || Math.abs(y - floaters[fIdx].y) > 4) {
+          element.dataset.dragged = "true";
+        }
         floaters[fIdx].x = x;
         floaters[fIdx].y = y;
       }
@@ -310,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const onMouseUp = () => {
       isDragging = false;
+      element.dataset.dragging = "false";
       element.style.zIndex = 10;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
@@ -318,9 +321,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const onTouchStart = (e) => {
       isDragging = true;
       const touch = e.touches[0];
-      startX = touch.clientX - currentX;
-      startY = touch.clientY - currentY;
+      
+      const fIdx = floaters.findIndex(f => f.member === member);
+      const posX = fIdx !== -1 ? floaters[fIdx].x : 0;
+      const posY = fIdx !== -1 ? floaters[fIdx].y : 0;
+
+      startX = touch.clientX - posX;
+      startY = touch.clientY - posY;
+
+      element.dataset.dragging = "true";
+      element.dataset.dragged = "false";
       element.style.zIndex = 1000;
+
       document.addEventListener('touchmove', onTouchMove, { passive: false });
       document.addEventListener('touchend', onTouchEnd);
     };
@@ -340,21 +352,22 @@ document.addEventListener('DOMContentLoaded', () => {
       x = Math.max(minX, Math.min(x, maxX));
       y = Math.max(minY, Math.min(y, maxY));
 
-      currentX = x;
-      currentY = y;
-
       const fIdx = floaters.findIndex(f => f.member === member);
       if (fIdx !== -1) {
+        if (Math.abs(x - floaters[fIdx].x) > 4 || Math.abs(y - floaters[fIdx].y) > 4) {
+          element.dataset.dragged = "true";
+        }
         floaters[fIdx].x = x;
         floaters[fIdx].y = y;
       }
 
       element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      e.preventDefault();
+      e.preventDefault(); // prevent scroll
     };
 
     const onTouchEnd = () => {
       isDragging = false;
+      element.dataset.dragging = "false";
       element.style.zIndex = 10;
       document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
