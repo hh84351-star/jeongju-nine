@@ -1032,55 +1032,72 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Load members from Supabase (or LocalStorage backup)
-  async function loadSavedMembers() {
+  function loadSavedMembers() {
     let hasUpdates = false;
 
-    // 1. Always load LocalStorage saved members first (ensures persistence out-of-the-box!)
-    let localSaved = JSON.parse(localStorage.getItem('local_members') || '[]');
-    localSaved.forEach(m => {
-      if (!gardenCrew.some(c => c.name === m.name && c.nickname === m.nickname)) {
-        gardenCrew.unshift(m);
-        hasUpdates = true;
-      }
-    });
-
-    // 2. Fetch live data from Supabase if configured
-    if (supabaseClient) {
-      try {
-        const { data, error } = await supabaseClient
-          .from('members')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          data.forEach(m => {
-            const mapped = {
-              name: m.name,
-              nickname: m.nickname || m.name,
-              age: m.age,
-              affiliation: m.affiliation,
-              motivation: m.motivation,
-              history: "참여 정원 🌱"
-            };
-            // Avoid duplicate loading
-            if (!gardenCrew.some(c => c.name === mapped.name && c.nickname === mapped.nickname)) {
-              gardenCrew.unshift(mapped);
+    // 1. Always load LocalStorage saved members first (synchronously / instantly!)
+    try {
+      let localSaved = JSON.parse(localStorage.getItem('local_members') || '[]');
+      if (Array.isArray(localSaved)) {
+        localSaved.forEach(m => {
+          if (m && typeof m === 'object') {
+            if (!gardenCrew.some(c => c.name === m.name && c.nickname === m.nickname)) {
+              gardenCrew.unshift(m);
               hasUpdates = true;
             }
-          });
-        }
-      } catch (err) {
-        console.error("Supabase load error, using local storage cache:", err);
+          }
+        });
       }
+    } catch (lsErr) {
+      console.error("LocalStorage load error:", lsErr);
     }
 
-    // Only re-render if new members were found
+    // Render local storage members instantly!
     if (hasUpdates) {
       initGarden();
     }
-  };
+
+    // 2. Fetch live data from Supabase asynchronously (completely non-blocking!)
+    if (supabaseClient) {
+      supabaseClient
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Supabase load error:", error);
+            return;
+          }
+
+          if (data && data.length > 0) {
+            let dbUpdates = false;
+            data.forEach(m => {
+              const mapped = {
+                name: m.name,
+                nickname: m.nickname || m.name,
+                age: m.age,
+                affiliation: m.affiliation,
+                motivation: m.motivation,
+                history: "참여 정원 🌱"
+              };
+              // Avoid duplicate loading
+              if (!gardenCrew.some(c => c.name === mapped.name && c.nickname === mapped.nickname)) {
+                gardenCrew.unshift(mapped);
+                dbUpdates = true;
+              }
+            });
+
+            // Re-render only if we got new members from the database
+            if (dbUpdates) {
+              initGarden();
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Supabase load exception:", err);
+        });
+    }
+  }
 
   // ==========================================
   // 8. Garden Application Form Submission
