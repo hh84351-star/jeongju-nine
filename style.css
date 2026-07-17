@@ -1048,6 +1048,77 @@ footer {
 }
 
 /* ==========================================
+   10. 인스타그램 피드 (Instagram Feed) Section
+   ========================================== */
+.instagram-box {
+  background-color: #FFFFFF;
+  border: var(--border-thick);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  box-shadow: var(--shadow-flat);
+  margin-top: 30px;
+}
+
+.instagram-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.insta-post-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: var(--border-thin);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: block;
+}
+
+.insta-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-normal);
+}
+
+.insta-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(25, 25, 27, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  color: #FFFFFF;
+}
+
+.insta-post-card:hover .insta-img {
+  transform: scale(1.05);
+}
+
+.insta-post-card:hover .insta-overlay {
+  opacity: 1;
+}
+
+.insta-stat {
+  font-family: var(--font-base);
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.instagram-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* ==========================================
    11. Responsive Design (PC-Ratio Preserving)
    ========================================== */
 @media (max-width: 900px) {
@@ -1079,23 +1150,23 @@ footer {
     padding: 0 12px;
   }
   .logo span {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
   .logo-img {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
   }
   .nav-menu {
-    gap: 4px;
+    gap: 2px;
   }
   .tab-btn {
-    padding: 4px 8px;
-    font-size: 0.72rem;
+    padding: 4px 6px;
+    font-size: 0.68rem;
   }
   .header-cta {
-    font-size: 0.7rem;
-    padding: 6px 10px;
+    font-size: 0.68rem;
+    padding: 6px 8px;
   }
   .about-hero {
     grid-template-columns: 1fr; /* Stack only under 600px */
@@ -1149,5 +1220,15 @@ footer {
   .quiz-result-buttons .btn {
     width: 100%;
     justify-content: center;
+  }
+  .instagram-feed-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .instagram-box {
+    padding: 16px;
+  }
+  .insta-stat {
+    font-size: 0.8rem;
   }
 }
