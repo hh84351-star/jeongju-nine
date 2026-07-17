@@ -675,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const quizProgressFillBar = document.getElementById('quiz-progress-fill-bar');
   const quizQNumber = document.getElementById('quiz-q-number');
   const quizQTitle = document.getElementById('quiz-q-title');
+  const quizQImageEl = document.getElementById('quiz-q-image-el');
   const quizQOptionsContainer = document.getElementById('quiz-q-options-container');
   
   const quizResultScreen = document.getElementById('quiz-result-screen');
@@ -705,6 +706,19 @@ document.addEventListener('DOMContentLoaded', () => {
     quizProgressFillBar.style.width = `${progressPercent}%`;
     quizQNumber.textContent = `Q${quizProgress.currentIndex + 1} / ${quizQuestions.length}`;
     quizQTitle.textContent = q.title;
+
+    // Dynamically update question image based on Q1-Q6 files in assets folder
+    const quizImages = [
+      "assets/Q1엘리베이터.jpg",
+      "assets/Q2시루떡.jpg",
+      "assets/Q3식당.jpg",
+      "assets/Q4불편.jpg",
+      "assets/Q5해외.jpg",
+      "assets/Q6칭찬.jpg"
+    ];
+    if (quizQImageEl) {
+      quizQImageEl.src = quizImages[quizProgress.currentIndex];
+    }
 
     // Render option buttons
     quizQOptionsContainer.innerHTML = '';
