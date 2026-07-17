@@ -254,77 +254,154 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initializing physics floaters
+  // Draggable logic for garden members (without auto-floating physics)
+  const makeDraggable = (element, member) => {
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    // Find initial coordinates
+    const idx = floaters.findIndex(f => f.member === member);
+    if (idx !== -1) {
+      currentX = floaters[idx].x;
+      currentY = floaters[idx].y;
+    }
+
+    const onMouseDown = (e) => {
+      isDragging = true;
+      startX = e.clientX - currentX;
+      startY = e.clientY - currentY;
+      element.style.zIndex = 1000;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      const fieldRect = gardenField.getBoundingClientRect();
+      let x = e.clientX - startX;
+      let y = e.clientY - startY;
+
+      const minX = 0;
+      const maxX = fieldRect.width - 72;
+      const minY = 0;
+      const maxY = fieldRect.height - 80;
+
+      x = Math.max(minX, Math.min(x, maxX));
+      y = Math.max(minY, Math.min(y, maxY));
+
+      currentX = x;
+      currentY = y;
+
+      const fIdx = floaters.findIndex(f => f.member === member);
+      if (fIdx !== -1) {
+        floaters[fIdx].x = x;
+        floaters[fIdx].y = y;
+      }
+
+      element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+      element.style.zIndex = 10;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    const onTouchStart = (e) => {
+      isDragging = true;
+      const touch = e.touches[0];
+      startX = touch.clientX - currentX;
+      startY = touch.clientY - currentY;
+      element.style.zIndex = 1000;
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      document.addEventListener('touchend', onTouchEnd);
+    };
+
+    const onTouchMove = (e) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      const fieldRect = gardenField.getBoundingClientRect();
+      let x = touch.clientX - startX;
+      let y = touch.clientY - startY;
+
+      const minX = 0;
+      const maxX = fieldRect.width - 72;
+      const minY = 0;
+      const maxY = fieldRect.height - 80;
+
+      x = Math.max(minX, Math.min(x, maxX));
+      y = Math.max(minY, Math.min(y, maxY));
+
+      currentX = x;
+      currentY = y;
+
+      const fIdx = floaters.findIndex(f => f.member === member);
+      if (fIdx !== -1) {
+        floaters[fIdx].x = x;
+        floaters[fIdx].y = y;
+      }
+
+      element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      e.preventDefault();
+    };
+
+    const onTouchEnd = () => {
+      isDragging = false;
+      element.style.zIndex = 10;
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+
+    // Attach listeners to the avatar circle specifically
+    const avatarEl = element.querySelector('.garden-floater-avatar');
+    avatarEl.addEventListener('mousedown', onMouseDown);
+    avatarEl.addEventListener('touchstart', onTouchStart);
+    avatarEl.addEventListener('dragstart', (e) => e.preventDefault());
+  };
+
+  // Initializing draggable garden members
   const initGarden = () => {
-    gardenField.innerHTML = '';
+    // Keep decorative flowers intact (do not clear the entire innerHTML)
+    const floatersInDOM = gardenField.querySelectorAll('.garden-floater');
+    floatersInDOM.forEach(el => el.remove());
+
     floaters = [];
     gardenCount.textContent = gardenCrew.length.toString();
 
-    // Get garden size (default boundaries if client bounding rect is not ready)
     const fieldWidth = gardenField.clientWidth || 800;
     const fieldHeight = gardenField.clientHeight || 460;
 
-    gardenCrew.forEach(member => {
+    gardenCrew.forEach((member, i) => {
       const dom = createFloaterDOM(member);
       gardenField.appendChild(dom);
 
-      // Random starting coordinates
-      const x = Math.random() * (fieldWidth - 80);
-      const y = Math.random() * (fieldHeight - 80);
-
-      // Small random floating velocities (-0.5 to 0.5 pixels/frame)
-      const vx = (Math.random() * 0.8 - 0.4);
-      const vy = (Math.random() * 0.8 - 0.4);
+      // Distribute starting positions nicely
+      const x = Math.max(10, Math.min((i * 120 + 50) % (fieldWidth - 100), fieldWidth - 80));
+      const y = Math.max(10, Math.min((Math.floor(i / 5) * 110 + 60) % (fieldHeight - 100), fieldHeight - 90));
 
       floaters.push({
         element: dom,
         member: member,
         x: x,
         y: y,
-        vx: vx === 0 ? 0.2 : vx, // ensure it actually moves
-        vy: vy === 0 ? -0.2 : vy,
         width: 72,
         height: 80
       });
+
+      // Apply initial coordinate translate
+      dom.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+
+      // Make it draggable
+      makeDraggable(dom, member);
     });
   };
 
-  // Main animation loop
-  const updatePhysics = () => {
-    const fieldWidth = gardenField.clientWidth || 800;
-    const fieldHeight = gardenField.clientHeight || 460;
-
-    floaters.forEach(f => {
-      f.x += f.vx;
-      f.y += f.vy;
-
-      // Wall boundaries collision bounce
-      if (f.x <= 0) {
-        f.x = 0;
-        f.vx = -f.vx;
-      } else if (f.x >= fieldWidth - f.width) {
-        f.x = fieldWidth - f.width;
-        f.vx = -f.vx;
-      }
-
-      if (f.y <= 0) {
-        f.y = 0;
-        f.vy = -f.vy;
-      } else if (f.y >= fieldHeight - f.height) {
-        f.y = fieldHeight - f.height;
-        f.vy = -f.vy;
-      }
-
-      // Apply coordinates using 3D hardware translate
-      f.element.style.transform = `translate3d(${f.x}px, ${f.y}px, 0)`;
-    });
-
-    requestAnimationFrame(updatePhysics);
-  };
-
-  // Initialize and run
+  // Initialize garden
   initGarden();
-  requestAnimationFrame(updatePhysics);
 
 
   // ==========================================
@@ -445,87 +522,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ==========================================
-  // 6. 정도(情度) 테스트 (10 Questions Quiz)
+  // 6. 정도(情度) 테스트 (6 Questions Quiz)
   // ==========================================
   const quizQuestions = [
     {
-      title: "Q1. 엘리베이터에 탔을 때 이웃과 눈이 마주쳤다. 나의 행동은?",
+      title: "Q1. 엘리베이터 문이 닫히려는 순간 누군가의 발소리가 들릴 때 나는?",
       options: [
-        { text: "빛의 속도로 스마트폰을 꺼내 바쁜 척을 한다.", score: 10 },
-        { text: "조금 어색하지만 살짝 목례 정도만 건넨다.", score: 20 },
-        { text: "밝은 표정으로 먼저 '안녕하세요, 좋은 하루 보내세요!' 하고 인사한다.", score: 35 }
+        { text: "문 열림 버튼을 적극적으로 눌러준다.", score: 35 },
+        { text: "아무 행동도 하지 않고 핸드폰만 뚫어지게 본다.", score: 20 },
+        { text: "은근슬쩍 닫힘 버튼을 연타한다.", score: 10 },
+        { text: "진짜로 발소리를 눈치채지 못한다.", score: 15 }
       ]
     },
     {
-      title: "Q2. 배달 음식을 주문할 때 나의 요청사항 스타일은?",
+      title: "Q2. 우리 집에 이사 온 옆집 이웃이 시루떡을 들고 인사하러 온다면?",
       options: [
-        { text: "마주치는 일을 최소화하기 위해 '문 앞에 두고 벨X'만 쓴다.", score: 10 },
-        { text: "평범하게 '문 앞에 놔주세요'라고 기재한다.", score: 20 },
-        { text: "'안전 배송 감사드립니다. 오늘 날씨가 추운데 건강 조심하세요!' 문구를 남긴다.", score: 35 }
+        { text: "“아 너무 감사합니다!” 하며 웃는 얼굴로 반갑게 맞이한다.", score: 35 },
+        { text: "가볍게 목례만 나누고 볼일이 있는 듯 서둘러 문을 닫는다.", score: 20 },
+        { text: "부담스러움을 느끼고 문 앞에 두고 가시라며 끝내 문은 열어주지 않는다.", score: 10 },
+        { text: "대체로 집에 없어 퇴근길 문 앞에 굳어버린 떡을 발견하는 편이다.", score: 15 }
       ]
     },
     {
-      title: "Q3. 비 내리는 출근길, 미화원 아저씨께서 바닥의 빗물을 닦고 계신다면?",
+      title: "Q3. 학생식당(혹은 사내식당)에서 혼자 외롭게 밥을 먹고 있는 동기를 발견하면?",
       options: [
-        { text: "바닥이 미끄러우니 내 발밑에만 집중해 조심히 비껴서 간다.", score: 10 },
-        { text: "눈이 마주치면 속으로만 '고생하신다' 생각하고 가볍게 목례한다.", score: 20 },
-        { text: "'덕분에 아침 골목이 깨끗하네요! 빗길 조심하세요!' 눈인사를 건넨다.", score: 35 }
+        { text: "먼저 반갑게 다가가 인사하며 “같이 먹자!”고 앞에 앉는다.", score: 35 },
+        { text: "상황이나 분위기를 조심스레 보고 인사만 나눈 뒤 다른 테이블에 앉는다.", score: 25 },
+        { text: "크게 관심이 없어 아예 눈길을 주지 않고 다른 자리에 앉는다.", score: 10 },
+        { text: "상황을 피하고 싶어 슬며시 나와 아예 다른 식당으로 향한다.", score: 15 }
       ]
     },
     {
-      title: "Q4. 길거리에서 지도를 보며 몹시 헤매고 있는 외국인 관광객을 보면?",
+      title: "Q4. 내가 목격했을 때 일상 속에서 가장 마음이 불편하고 정(情)이 없다고 느끼는 상황은?",
       options: [
-        { text: "영어 울렁증이 있어 나도 모르게 시선을 돌리며 피해 지나간다.", score: 10 },
-        { text: "주변에 영어를 잘하거나 도와줄 사람이 없는지 힐끔 살핀다.", score: 20 },
-        { text: "다가가 지도를 가리키며 목적지까지 방향을 천천히 짚어 안내해준다.", score: 35 }
+        { text: "모임에서 대화에 잘 끼지 못해 겉도는 사람을 아무도 신경 쓰지 않는 방관.", score: 35 },
+        { text: "도움을 받고서도 당연하다는 듯 고맙다는 인사 한마디 없는 태도.", score: 30 },
+        { text: "가장 가깝고 하루 종일 붙어있는 사람들 사이에서 단 한마디 대화도 없는 상황.", score: 25 },
+        { text: "사소하게 실수한 것에 대해 격려보단 비난과 지적만 오가는 분위기.", score: 20 }
       ]
     },
     {
-      title: "Q5. 친한 친구가 본인의 과실로 인해 큰 실패를 겪고 심하게 위축되어 있을 때?",
+      title: "Q5. 만약 해외 여행에 나갔을 때 가장 깊은 '정(情)'을 느껴보고 싶은 이색 문화는?",
       options: [
-        { text: "'다음부터 조심해야지' 하며 현실적인 해결방안이나 대처법을 조언한다.", score: 10 },
-        { text: "'토닥토닥.. 그럴 수도 있지' 정도로만 덤덤하게 등 두드려준다.", score: 20 },
-        { text: "따뜻하고 든든한 밥을 함께 먹으며 밤늦게까지 그의 넋두리를 들어준다.", score: 35 }
+        { text: "카페나 상점에서 주문할 때 일상적인 안부와 위트를 자연스레 나누는 스몰토크.", score: 35 },
+        { text: "내 뒤에 따라오는 낯선 사람을 위해 기꺼이 출입문을 오랫동안 잡아주는 매너.", score: 30 },
+        { text: "나라를 지키느라 헌신하는 군인이나 경찰들을 조건 없이 예우하고 존중해주는 문화.", score: 25 },
+        { text: "길가에서 남의 반려견을 예뻐할 때도 먼저 조심스럽게 예의를 갖춰 물어보는 존중.", score: 20 }
       ]
     },
     {
-      title: "Q6. 식당이나 카페에서 직원을 마주하고 음식을 주문할 때?",
+      title: "Q6. 내가 타인에게 작게나마 정을 베풀었을 때 상대방에게 들으면 가장 뿌듯한 칭찬은?",
       options: [
-        { text: "휴대폰을 손에서 떼지 않고 기계적으로 소통하거나 무인 키오스크만 쓴다.", score: 10 },
-        { text: "평범하게 용건 위주로 주문하고 카드를 주고받는다.", score: 20 },
-        { text: "상대의 눈을 보며 감사하다는 인사를 꼭 덧붙여 말한다.", score: 35 }
-      ]
-    },
-    {
-      title: "Q7. 친구의 소중한 생일날, 축하를 나누는 나의 방법은?",
-      options: [
-        { text: "카카오톡 기프티콘과 '생일축하해~' 단톡방 메시지만 보낸다.", score: 10 },
-        { text: "조금 쓸만한 물건을 고르고, 배송 메시지에 축하 글귀를 담아 보낸다.", score: 20 },
-        { text: "되도록 직접 만나 축하 밥을 사고, 비뚤빼뚤하더라도 손편지를 건넨다.", score: 35 }
-      ]
-    },
-    {
-      title: "Q8. 직장 동료나 친구의 안색이 몹시 피곤해 보일 때 나의 반응은?",
-      options: [
-        { text: "괜히 참견하는 것은 실례라 여겨 모른 척 지나간다.", score: 10 },
-        { text: "'오늘 조금 피곤해 보여, 괜찮아?' 한마디 물어본다.", score: 20 },
-        { text: "몰래 그의 책상 위에 상큼한 귤이나 사탕, 비타민 음료를 얹어 둔다.", score: 35 }
-      ]
-    },
-    {
-      title: "Q9. 회사나 학교에 출근/등교할 때 나의 첫 행동은?",
-      options: [
-        { text: "귀에 무선 이어폰을 꽉 꽂은 채 곧장 내 자리로 직행한다.", score: 10 },
-        { text: "마주치고 인사하는 이웃이 있다면 가볍게 목인사 정도를 나눈다.", score: 20 },
-        { text: "주변 동료들에게 먼저 환하게 아침 인사를 건네고 대화를 나눈다.", score: 35 }
-      ]
-    },
-    {
-      title: "Q10. 나에게 타인에게 건네는 '정(情)'이란 무엇인가?",
-      options: [
-        { text: "바쁜 현대 사회에서 다소 불필요하거나 부담스러울 수 있는 오지랖.", score: 10 },
-        { text: "있으면 좋고 없어도 사는 데 무방한 부가적인 사회적 도덕.", score: 20 },
-        { text: "대가 없이 마음과 마음을 이어 사회를 훈훈하게 하는 소통의 힘.", score: 35 }
+        { text: "“넌 정말 곁에 두기만 해도 마음이 포근해지고 따뜻한 사람이야.”", score: 35 },
+        { text: "“너 덕분에 오늘 하루가 어떻게 갔는지 모르게 정말 즐겁고 특별해졌어!”", score: 30 },
+        { text: "“상황이 많이 꼬여있었는데 네 덕분에 실질적으로 큰 도움이 되었어.”", score: 25 },
+        { text: "“내 골치 아픈 현실적인 난제를 명쾌하게 해결해 줘서 정말 든든하다.”", score: 20 }
       ]
     }
   ];
@@ -569,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render option buttons
     quizQOptionsContainer.innerHTML = '';
-    const prefixes = ['A', 'B', 'C'];
+    const prefixes = ['1', '2', '3', '4'];
     
     q.options.forEach((opt, idx) => {
       const button = document.createElement('button');
@@ -598,33 +649,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const calculateAndShowResult = () => {
     const score = quizProgress.cumulativeScore;
     
-    // Scale score to 10-99% range
-    // Max score is 350, Min is 100
-    const percentage = Math.round(((score - 100) / 250) * 89 + 10);
+    // Scale score to 10-99% range based on 6 questions
+    // Max score is 210, Min is 60 (range = 150)
+    const percentage = Math.round(((score - 60) / 150) * 89 + 10);
     
-    let title = '바삭따끈 붕어빵';
+    let title = '선택적 정(情) 조절 장치';
     let emoji = '🐟';
     let desc = '';
 
-    if (percentage <= 45) {
-      title = '꽁꽁 얼어붙은 눈사람';
+    if (percentage <= 40) {
+      title = '드라이아이스급 철벽 방어막';
       emoji = '⛄';
-      desc = `현재 당신의 마음 정도(情度)는 바쁜 일상의 흐름 속에서 다소 굳어 있는 상태입니다. 
-      타인에게 관심을 주고받는 과정이 어색하게 느껴지거나 번거롭게 여겨질 수 있습니다. 
-      하지만 당신에게도 순수한 아홉 살 시절, 대가 없이 이웃을 도우며 행복했던 동심이 숨어있을 것입니다. 
-      가벼운 감사 인사나 온라인 편지를 전하며 꽁꽁 언 마음을 슬며시 녹여 보세요!`;
-    } else if (percentage <= 78) {
-      title = '바삭따끈 붕어빵';
+      desc = `당신은 차가운 현대 사회에서 생존하기 위해 고도로 최적화된 시티 보이/시티 걸입니다! 엘리베이터 발소리에도 문을 닫는 번개 같은 순발력의 소유자일 수도 있겠군요. 하지만 마음속 깊은 곳엔 9살 적 잃어버린 수줍은 꼬마 아이가 들어있습니다. 친구들이 당신과 정을 나누기 위해 방한복을 입고 접근하고 있을지도 모릅니다. 먼저 가벼운 인사나 작은 선플 하나로 당신의 해동 작업을 시작해 보는 건 어떨까요?`;
+    } else if (percentage <= 75) {
+      title = '선택적 정(情) 조절 장치';
       emoji = '🐟';
-      desc = `당신은 마음 한구석에 고운 정을 듬뿍 안고서도, 쑥스럽거나 어색한 마음에 먼저 표현하지 못하는 마음 따뜻한 관조형 이웃입니다. 
-      소박한 계기만 주어진다면 누구보다 다정하게 온기를 나눌 수 있습니다. 
-      '정주는 아홉살'의 감사 챌린지에 동참해 당신의 숨은 온기를 한 칸 더 올려보세요!`;
+      desc = `당신은 필요한 만큼 온기를 키고 끌 줄 아는 현명한 '사회적 지성인'입니다. 아는 척해야 할지 모르는 척해야 할지 머릿속으로 시뮬레이션(MBTI의 I가 강력하게 의심되는군요!)을 0.5초 만에 돌려 가장 안전한 중간을 택하는 편입니다. 마주친 대학 동기에게 가볍게 눈인사만 나누고 도망치듯 자리를 피한 적이 있진 않나요? 조금만 마음을 연다면 주변 사람들에게 스파 온천 같은 개운한 정을 선물해 줄 수 있는 잠재력 높은 온기 소유자입니다.`;
     } else {
-      title = '펄펄 끓는 노란 군고구마';
+      title = '정이 넘쳐 흐르는 아궁이 온돌';
       emoji = '🍠';
-      desc = `대단합니다! 당신은 메마른 도시 속에서도 주변을 훈훈하게 달구어 주는 살아있는 인간 난로이자, '정(情)의 화신'입니다! 
-      아홉 살의 순수한 어린아이처럼 타인의 슬픔에 공감하고 다정한 말 한마디를 먼저 건넬 준비가 되어있는 따뜻한 분이시네요. 
-      어서 '정원'이 되어 우리 사회에 더 커다란 따뜻함의 싹을 틔워주세요!`;
+      desc = `오 마이 갓! 당신은 정을 주기 위해 태어난 오지랖의 신, 동네 마당발이시군요! 식당 이모님께 친근하게 굴거나 닫히는 엘리베이터를 문이 깨질 정도로 붙잡아주는 사람의 전형입니다. 이웃집에서 시루떡을 들고 오면 접시를 깨끗하게 비우고 답례로 귤 한 박스를 넘겨줄 상입니다. 대가 없는 정과 사랑으로 주변을 너무 뜨겁게 데워, 주변 사람들이 더위(?)를 느낄 수도 있으니 가끔은 조절해 주시는 센스가 필요합니다. 당신은 정주는 아홉살의 훌륭한 정원 후보생입니다!`;
     }
 
     quizResultScore.textContent = `${percentage}%`;
